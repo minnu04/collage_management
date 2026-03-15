@@ -2,8 +2,10 @@ import { useState } from 'react';
 
 function LoginPage({ onLogin, facultyList, onRequestFacultySignup }) {
   const [name, setName] = useState('');
+  const [userId, setUserId] = useState('');
   const [role, setRole] = useState('student');
   const [department, setDepartment] = useState('');
+  const [facultySignupId, setFacultySignupId] = useState('');
   const [mode, setMode] = useState('login');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -17,16 +19,26 @@ function LoginPage({ onLogin, facultyList, onRequestFacultySignup }) {
   const switchMode = (nextMode) => {
     setMode(nextMode);
     setPassword('');
+    setUserId('');
+    setName('');
+    setDepartment('');
+    setFacultySignupId('');
     resetFeedback();
   };
 
   const submitLogin = (event) => {
     event.preventDefault();
     const trimmedName = name.trim();
+    const trimmedUserId = userId.trim().toUpperCase();
     resetFeedback();
 
-    if (!trimmedName) {
+    if (!trimmedName && role !== 'admin') {
       setError('Please enter your name.');
+      return;
+    }
+
+    if ((role === 'student' || role === 'faculty') && !trimmedUserId) {
+      setError('Please enter your ID.');
       return;
     }
 
@@ -35,25 +47,40 @@ function LoginPage({ onLogin, facultyList, onRequestFacultySignup }) {
       return;
     }
 
+    const facultyById = facultyList.find(
+      (faculty) => faculty.loginId.toLowerCase() === trimmedUserId.toLowerCase()
+    );
+
+    if (role === 'faculty' && !facultyById) {
+      setError('Faculty ID not found or not approved.');
+      return;
+    }
+
     if (
       role === 'faculty' &&
-      !facultyList.some(
-        (faculty) => faculty.name.toLowerCase() === trimmedName.toLowerCase()
-      )
+      facultyById.name.toLowerCase() !== trimmedName.toLowerCase()
     ) {
-      setError('Faculty name not found. Use an approved faculty name.');
+      setError('Faculty name does not match the given ID.');
       return;
     }
 
     setError('');
-    onLogin({ name: trimmedName, role });
+    onLogin({
+      name: role === 'faculty' ? facultyById.name : trimmedName,
+      role,
+      userId: role === 'admin' ? 'ADMIN' : trimmedUserId,
+    });
   };
 
   const submitFacultySignup = (event) => {
     event.preventDefault();
     resetFeedback();
 
-    const response = onRequestFacultySignup({ name, department });
+    const response = onRequestFacultySignup({
+      name,
+      department,
+      loginId: facultySignupId,
+    });
     if (!response.ok) {
       setError(response.message);
       return;
@@ -62,6 +89,7 @@ function LoginPage({ onLogin, facultyList, onRequestFacultySignup }) {
     setMessage(response.message);
     setName('');
     setDepartment('');
+    setFacultySignupId('');
   };
 
   return (
@@ -85,15 +113,30 @@ function LoginPage({ onLogin, facultyList, onRequestFacultySignup }) {
 
         {mode === 'login' ? (
           <form onSubmit={submitLogin}>
-            <label>Name</label>
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Your name" />
-
             <label>Role</label>
             <select value={role} onChange={(event) => setRole(event.target.value)}>
               <option value="student">Student</option>
               <option value="faculty">Faculty</option>
               <option value="admin">Admin</option>
             </select>
+
+            {role !== 'admin' ? (
+              <>
+                <label>{role === 'faculty' ? 'Faculty ID' : 'Student ID'}</label>
+                <input
+                  value={userId}
+                  onChange={(event) => setUserId(event.target.value)}
+                  placeholder={role === 'faculty' ? 'Enter faculty ID (e.g. FAC1001)' : 'Enter student ID'}
+                />
+
+                <label>Name</label>
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Your name"
+                />
+              </>
+            ) : null}
 
             {role === 'admin' ? (
               <>
@@ -115,6 +158,13 @@ function LoginPage({ onLogin, facultyList, onRequestFacultySignup }) {
           </form>
         ) : (
           <form onSubmit={submitFacultySignup}>
+            <label>Faculty ID</label>
+            <input
+              value={facultySignupId}
+              onChange={(event) => setFacultySignupId(event.target.value.toUpperCase())}
+              placeholder="Enter faculty ID (e.g. FAC2001)"
+            />
+
             <label>Faculty Name</label>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Enter faculty name" />
 

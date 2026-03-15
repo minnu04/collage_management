@@ -13,6 +13,19 @@ const STORAGE_KEYS = {
   session: 'college_app_session',
 };
 
+const normalizeFacultyList = (facultyList) =>
+  (facultyList ?? []).map((faculty, index) => ({
+    ...faculty,
+    loginId: faculty.loginId ?? `FAC${String(index + 1001).padStart(4, '0')}`,
+    slots: faculty.slots ?? [],
+  }));
+
+const normalizePendingFaculty = (pendingFaculty) =>
+  (pendingFaculty ?? []).map((request, index) => ({
+    ...request,
+    loginId: request.loginId ?? `FACP${String(index + 1).padStart(4, '0')}`,
+  }));
+
 const loadStoredValue = (key, fallbackValue) => {
   try {
     const raw = localStorage.getItem(key);
@@ -27,15 +40,17 @@ const loadStoredValue = (key, fallbackValue) => {
 };
 
 function App() {
-  const [facultyList, setFacultyList] = useState(() =>
-    loadStoredValue(STORAGE_KEYS.facultyList, initialFaculty)
-  );
+  const [facultyList, setFacultyList] = useState(() => {
+    const stored = loadStoredValue(STORAGE_KEYS.facultyList, initialFaculty);
+    return normalizeFacultyList(stored);
+  });
   const [appointments, setAppointments] = useState(() =>
     loadStoredValue(STORAGE_KEYS.appointments, initialAppointments)
   );
-  const [pendingFaculty, setPendingFaculty] = useState(() =>
-    loadStoredValue(STORAGE_KEYS.pendingFaculty, initialPendingFaculty)
-  );
+  const [pendingFaculty, setPendingFaculty] = useState(() => {
+    const stored = loadStoredValue(STORAGE_KEYS.pendingFaculty, initialPendingFaculty);
+    return normalizePendingFaculty(stored);
+  });
   const [session, setSession] = useState(() => loadStoredValue(STORAGE_KEYS.session, null));
 
   useEffect(() => {
@@ -59,9 +74,34 @@ function App() {
     localStorage.removeItem(STORAGE_KEYS.session);
   }, [session]);
 
+  const loggedInFacultyRecord = useMemo(() => {
+    if (session?.role !== 'faculty') {
+      return null;
+    }
+
+    if (session.userId) {
+      return facultyList.find(
+        (faculty) => faculty.loginId.toLowerCase() === session.userId.toLowerCase()
+      );
+    }
+
+    if (session.name) {
+      return facultyList.find(
+        (faculty) => faculty.name.toLowerCase() === session.name.toLowerCase()
+      );
+    }
+
+    return null;
+  }, [facultyList, session]);
+
   const pendingCount = useMemo(
-    () => appointments.filter((appointment) => appointment.status === 'pending').length,
-    [appointments]
+    () =>
+      appointments.filter(
+        (appointment) =>
+          appointment.status === 'pending' &&
+          (session?.role !== 'faculty' || appointment.facultyId === loggedInFacultyRecord?.id)
+      ).length,
+    [appointments, loggedInFacultyRecord?.id, session?.role]
   );
 
   const addAppointment = (newAppointment) => {
@@ -82,9 +122,19 @@ function App() {
     );
   };
 
-  const addFaculty = ({ name, department }) => {
+  const addFaculty = ({ name, department, loginId }) => {
+    const normalizedLoginId = (loginId ?? '').trim().toUpperCase();
+    if (!normalizedLoginId) {
+      return;
+    }
+
+    if (facultyList.some((faculty) => faculty.loginId.toLowerCase() === normalizedLoginId.toLowerCase())) {
+      return;
+    }
+
     const newFaculty = {
       id: `f-${Date.now()}`,
+      loginId: normalizedLoginId,
       name,
       department,
       slots: [],
@@ -93,9 +143,10 @@ function App() {
     setFacultyList((previous) => [newFaculty, ...previous]);
   };
 
-  const addPendingFacultyRequest = ({ name, department }) => {
+  const addPendingFacultyRequest = ({ name, department, loginId }) => {
     const newRequest = {
       id: `pf-${Date.now()}`,
+      loginId,
       name,
       department,
       requestedAt: new Date().toISOString(),
@@ -105,29 +156,38 @@ function App() {
     setPendingFaculty((previous) => [newRequest, ...previous]);
   };
 
-  const requestFacultySignup = ({ name, department }) => {
+  const requestFacultySignup = ({ name, department, loginId }) => {
     const normalizedName = name.trim().toLowerCase();
     const normalizedDepartment = department.trim();
+    const normalizedLoginId = loginId.trim().toUpperCase();
 
-    if (!normalizedName || !normalizedDepartment) {
-      return { ok: false, message: 'Name and department are required.' };
+    if (!normalizedName || !normalizedDepartment || !normalizedLoginId) {
+      return { ok: false, message: 'Name, department, and faculty ID are required.' };
     }
 
     const alreadyApproved = facultyList.some(
-      (faculty) => faculty.name.toLowerCase() === normalizedName
+      (faculty) =>
+        faculty.name.toLowerCase() === normalizedName ||
+        faculty.loginId.toLowerCase() === normalizedLoginId.toLowerCase()
     );
     if (alreadyApproved) {
       return { ok: false, message: 'Faculty already approved. Please use Faculty login.' };
     }
 
     const alreadyPending = pendingFaculty.some(
-      (faculty) => faculty.name.toLowerCase() === normalizedName
+      (faculty) =>
+        faculty.name.toLowerCase() === normalizedName ||
+        faculty.loginId.toLowerCase() === normalizedLoginId.toLowerCase()
     );
     if (alreadyPending) {
       return { ok: false, message: 'Request already pending admin approval.' };
     }
 
-    addPendingFacultyRequest({ name: name.trim(), department: normalizedDepartment });
+    addPendingFacultyRequest({
+      name: name.trim(),
+      department: normalizedDepartment,
+      loginId: normalizedLoginId,
+    });
     return { ok: true, message: 'Request submitted. Wait for admin approval.' };
   };
 
@@ -137,7 +197,7 @@ function App() {
       return;
     }
 
-    addFaculty({ name: request.name, department: request.department });
+    addFaculty({ name: request.name, department: request.department, loginId: request.loginId });
     setPendingFaculty((previous) => previous.filter((item) => item.id !== requestId));
   };
 
@@ -207,6 +267,7 @@ function App() {
                   facultyList={facultyList}
                   appointments={appointments}
                   loggedInStudentName={session.name}
+                  loggedInStudentId={session.userId}
                   onBook={addAppointment}
                 />
               ) : (
@@ -221,7 +282,7 @@ function App() {
                 <FacultyPage
                   facultyList={facultyList}
                   appointments={appointments}
-                  loggedInFacultyName={session.name}
+                  loggedInFacultyId={session.userId ?? loggedInFacultyRecord?.loginId ?? ''}
                   onUpdateAppointment={updateAppointment}
                   onSetFacultySlots={setFacultySlots}
                 />

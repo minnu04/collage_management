@@ -13,6 +13,10 @@ body {
   background: #f3f4f6;
 }
 
+#root {
+  width: 100%;
+}
+
 .app-shell {
   min-height: 100vh;
 }
@@ -31,11 +35,14 @@ body {
 .header h1 {
   margin: 0;
   font-size: 1.2rem;
+  min-width: 0;
 }
 
 .nav {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .nav a {
@@ -62,6 +69,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
+  align-items: start;
 }
 
 .card {
@@ -69,6 +77,8 @@ body {
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .nested-card {
@@ -111,6 +121,7 @@ button {
   padding: 9px 12px;
   cursor: pointer;
   font: inherit;
+  max-width: 100%;
 }
 
 .btn-primary {
@@ -131,6 +142,10 @@ button {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.row-actions > * {
+  flex: 1 1 140px;
 }
 
 .badge {
@@ -162,6 +177,12 @@ button {
   color: #1d4ed8;
 }
 
+.badge.emergency {
+  background: #ffedd5;
+  color: #9a3412;
+  margin-left: 6px;
+}
+
 .list {
   display: grid;
   gap: 12px;
@@ -177,6 +198,42 @@ button {
   margin-top: 8px;
   color: #374151;
   font-size: 0.9rem;
+}
+
+.inline-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.inline-toggle input {
+  width: auto;
+  margin: 0;
+}
+
+.slot-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 8px;
+}
+
+.slot-list li {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  background: #f9fafb;
+  display: grid;
+  gap: 8px;
+}
+
+.slot-editor {
+  margin-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
 }
 
 .auth-wrap {
@@ -207,12 +264,67 @@ button {
   width: 100%;
 }
 
+input[readonly] {
+  background: #f9fafb;
+}
+
+@media (max-width: 960px) {
+  .container {
+    max-width: 900px;
+    padding: 16px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
 @media (max-width: 640px) {
   .header {
     padding: 12px 14px;
+    align-items: flex-start;
+  }
+
+  .header h1 {
+    width: 100%;
+    font-size: 1.05rem;
+  }
+
+  .nav {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .nav a,
+  .nav button {
+    flex: 1 1 auto;
+    text-align: center;
   }
 
   .container {
     padding: 14px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .row-actions {
+    flex-direction: column;
+  }
+
+  .row-actions > * {
+    width: 100%;
+    flex: none;
+  }
+
+  .auth-wrap {
+    padding: 12px;
   }
 }

@@ -7,18 +7,19 @@ function AdminPage({
   onApproveFaculty,
   onRejectFaculty,
 }) {
-  const [facultyForm, setFacultyForm] = useState({ name: '', department: '' });
+  const [facultyForm, setFacultyForm] = useState({ name: '', department: '', loginId: '' });
 
   const submitAddFaculty = (event) => {
     event.preventDefault();
     const name = facultyForm.name.trim();
     const department = facultyForm.department.trim();
-    if (!name || !department) {
+    const loginId = facultyForm.loginId.trim().toUpperCase();
+    if (!name || !department || !loginId) {
       return;
     }
 
-    onAddFaculty({ name, department });
-    setFacultyForm({ name: '', department: '' });
+    onAddFaculty({ name, department, loginId });
+    setFacultyForm({ name: '', department: '', loginId: '' });
   };
 
   return (
@@ -26,6 +27,15 @@ function AdminPage({
       <section className="card">
         <h2>Add Faculty (Direct)</h2>
         <form onSubmit={submitAddFaculty}>
+          <label>Faculty ID</label>
+          <input
+            value={facultyForm.loginId}
+            onChange={(event) =>
+              setFacultyForm((previous) => ({ ...previous, loginId: event.target.value.toUpperCase() }))
+            }
+            placeholder="Enter faculty ID"
+          />
+
           <label>Faculty Name</label>
           <input
             value={facultyForm.name}
@@ -61,6 +71,7 @@ function AdminPage({
               <article key={request.id} className="card nested-card">
                 <div className="badge pending">pending</div>
                 <h3>{request.name}</h3>
+                <p className="meta">Faculty ID: {request.loginId}</p>
                 <p className="meta">Department: {request.department}</p>
                 <p className="meta">Requested: {new Date(request.requestedAt).toLocaleString()}</p>
                 <div className="row-actions">
@@ -91,6 +102,7 @@ function AdminPage({
           {facultyList.map((faculty) => (
             <article key={faculty.id} className="card nested-card">
               <h3>{faculty.name}</h3>
+              <p className="meta">Faculty ID: {faculty.loginId}</p>
               <p className="meta">Department: {faculty.department}</p>
               <p className="meta">Available Slots: {faculty.slots.length}</p>
             </article>
