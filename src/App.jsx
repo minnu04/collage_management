@@ -74,6 +74,32 @@ function App() {
     localStorage.removeItem(STORAGE_KEYS.session);
   }, [session]);
 
+  useEffect(() => {
+    if (!session || session.userId) {
+      return;
+    }
+
+    if (session.role === 'student') {
+      const fallbackStudentId = `STU-${(session.name ?? 'USER').replace(/\s+/g, '').toUpperCase()}`;
+      setSession((previous) =>
+        previous ? { ...previous, userId: previous.userId ?? fallbackStudentId } : previous
+      );
+      return;
+    }
+
+    if (session.role === 'faculty') {
+      const matchedFaculty = facultyList.find(
+        (faculty) => faculty.name.toLowerCase() === (session.name ?? '').toLowerCase()
+      );
+
+      if (matchedFaculty) {
+        setSession((previous) =>
+          previous ? { ...previous, userId: previous.userId ?? matchedFaculty.loginId } : previous
+        );
+      }
+    }
+  }, [facultyList, session]);
+
   const loggedInFacultyRecord = useMemo(() => {
     if (session?.role !== 'faculty') {
       return null;

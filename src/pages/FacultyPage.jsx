@@ -121,6 +121,9 @@ function FacultyPage({
     <div className="grid">
       <section className="card">
         <h2>Faculty Panel</h2>
+        {!matchedFacultyByLogin ? (
+          <p className="error-text">Faculty profile mapping not found for this login. Please logout and login again.</p>
+        ) : null}
         <label>Select Faculty</label>
         <select value={selectedFacultyId} onChange={(event) => setSelectedFacultyId(event.target.value)}>
           {facultyList.map((faculty) => (

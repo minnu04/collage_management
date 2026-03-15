@@ -98,6 +98,7 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
       !regularForm.slot ||
       !regularForm.purpose
     ) {
+      setRegularError('Please fill all required fields and select a valid slot.');
       return;
     }
 
@@ -142,6 +143,7 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
       !emergencyForm.slot ||
       !emergencyForm.purpose
     ) {
+      setEmergencyError('Please fill all required fields and select an emergency slot.');
       return;
     }
 
@@ -212,6 +214,9 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
               </option>
             ))}
           </select>
+          {regularSlotOptions.length === 0 ? (
+            <p className="meta">No regular slots available (48+ hours). Use emergency booking for urgent cases.</p>
+          ) : null}
 
           <label className="inline-toggle">
             <input
@@ -274,6 +279,9 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
               </option>
             ))}
           </select>
+          {emergencySlotOptions.length === 0 ? (
+            <p className="meta">No emergency slots available in the next 48 hours.</p>
+          ) : null}
 
           <label className="inline-toggle">
             <input
