@@ -197,6 +197,12 @@ button {
   font-size: 0.9rem;
 }
 
+.success-text {
+  color: #166534;
+  margin: 2px 0 10px;
+  font-size: 0.9rem;
+}
+
 .full-btn {
   width: 100%;
 }

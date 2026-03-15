@@ -1,9 +1,36 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 
-function FacultyPage({ facultyList, appointments, onUpdateAppointment, onSetFacultySlots }) {
-  const [selectedFacultyId, setSelectedFacultyId] = useState(facultyList[0]?.id ?? '');
+function FacultyPage({
+  facultyList,
+  appointments,
+  loggedInFacultyName,
+  onUpdateAppointment,
+  onSetFacultySlots,
+}) {
+  const matchedFacultyByLogin = useMemo(
+    () =>
+      facultyList.find(
+        (faculty) => faculty.name.toLowerCase() === (loggedInFacultyName ?? '').trim().toLowerCase()
+      ),
+    [facultyList, loggedInFacultyName]
+  );
+
+  const [selectedFacultyId, setSelectedFacultyId] = useState(
+    matchedFacultyByLogin?.id ?? facultyList[0]?.id ?? ''
+  );
   const [newSlot, setNewSlot] = useState('');
+
+  useEffect(() => {
+    if (matchedFacultyByLogin) {
+      setSelectedFacultyId(matchedFacultyByLogin.id);
+      return;
+    }
+
+    if (!facultyList.some((faculty) => faculty.id === selectedFacultyId)) {
+      setSelectedFacultyId(facultyList[0]?.id ?? '');
+    }
+  }, [facultyList, matchedFacultyByLogin, selectedFacultyId]);
 
   const selectedFaculty = useMemo(
     () => facultyList.find((faculty) => faculty.id === selectedFacultyId),

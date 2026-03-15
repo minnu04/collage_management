@@ -4,12 +4,10 @@ function AdminPage({
   facultyList,
   pendingFaculty,
   onAddFaculty,
-  onAddPendingFacultyRequest,
   onApproveFaculty,
   onRejectFaculty,
 }) {
   const [facultyForm, setFacultyForm] = useState({ name: '', department: '' });
-  const [requestForm, setRequestForm] = useState({ name: '', department: '' });
 
   const submitAddFaculty = (event) => {
     event.preventDefault();
@@ -21,18 +19,6 @@ function AdminPage({
 
     onAddFaculty({ name, department });
     setFacultyForm({ name: '', department: '' });
-  };
-
-  const submitNewRequest = (event) => {
-    event.preventDefault();
-    const name = requestForm.name.trim();
-    const department = requestForm.department.trim();
-    if (!name || !department) {
-      return;
-    }
-
-    onAddPendingFacultyRequest({ name, department });
-    setRequestForm({ name: '', department: '' });
   };
 
   return (
@@ -65,30 +51,7 @@ function AdminPage({
       </section>
 
       <section className="card">
-        <h2>New Faculty Requests</h2>
-        <form onSubmit={submitNewRequest}>
-          <label>New Faculty Name</label>
-          <input
-            value={requestForm.name}
-            onChange={(event) =>
-              setRequestForm((previous) => ({ ...previous, name: event.target.value }))
-            }
-            placeholder="Enter name"
-          />
-
-          <label>Department</label>
-          <input
-            value={requestForm.department}
-            onChange={(event) =>
-              setRequestForm((previous) => ({ ...previous, department: event.target.value }))
-            }
-            placeholder="Enter department"
-          />
-
-          <button className="btn-secondary" type="submit">
-            Submit for Approval
-          </button>
-        </form>
+        <h2>Faculty Approval Requests</h2>
 
         <div className="list">
           {pendingFaculty.length === 0 ? (

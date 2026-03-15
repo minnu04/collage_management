@@ -1,13 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AppointmentCard from '../components/AppointmentCard';
 
-function StudentPage({ facultyList, appointments, onBook }) {
+function StudentPage({ facultyList, appointments, loggedInStudentName, onBook }) {
   const [form, setForm] = useState({
-    studentName: '',
+    studentName: (loggedInStudentName ?? '').trim(),
     facultyId: facultyList[0]?.id ?? '',
     slot: '',
     purpose: '',
   });
+
+  useEffect(() => {
+    setForm((previous) => ({
+      ...previous,
+      studentName: (loggedInStudentName ?? '').trim(),
+    }));
+  }, [loggedInStudentName]);
 
   const selectedFaculty = useMemo(
     () => facultyList.find((faculty) => faculty.id === form.facultyId),
@@ -50,7 +57,7 @@ function StudentPage({ facultyList, appointments, onBook }) {
           <label>Student Name</label>
           <input
             value={form.studentName}
-            onChange={(event) => setForm((prev) => ({ ...prev, studentName: event.target.value }))}
+            readOnly
             placeholder="Enter your name"
           />
 
