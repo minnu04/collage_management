@@ -49,13 +49,36 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
     [facultyList, emergencyForm.facultyId]
   );
 
-  const regularSlotOptions = (selectedRegularFaculty?.slots ?? []).filter(
-    (slot) => new Date(slot).getTime() >= bookingThresholdTime
-  );
+  const activeBookedSlotsByFaculty = useMemo(() => {
+    const facultyBookedSlots = new Map();
 
-  const emergencySlotOptions = (selectedEmergencyFaculty?.slots ?? []).filter(
-    (slot) => new Date(slot).getTime() < bookingThresholdTime
-  );
+    appointments.forEach((appointment) => {
+      if (appointment.status === 'rejected') {
+        return;
+      }
+
+      const existing = facultyBookedSlots.get(appointment.facultyId) ?? new Set();
+      existing.add(appointment.slot);
+      facultyBookedSlots.set(appointment.facultyId, existing);
+    });
+
+    return facultyBookedSlots;
+  }, [appointments]);
+
+  const isSlotBooked = (facultyId, slot) => {
+    const bookedSet = activeBookedSlotsByFaculty.get(facultyId);
+    return bookedSet ? bookedSet.has(slot) : false;
+  };
+
+  const regularSlotOptions = (selectedRegularFaculty?.slots ?? []).filter((slot) => {
+    const isAfterWindow = new Date(slot).getTime() >= bookingThresholdTime;
+    return isAfterWindow && !isSlotBooked(regularForm.facultyId, slot);
+  });
+
+  const emergencySlotOptions = (selectedEmergencyFaculty?.slots ?? []).filter((slot) => {
+    const isInsideWindow = new Date(slot).getTime() < bookingThresholdTime;
+    return isInsideWindow && !isSlotBooked(emergencyForm.facultyId, slot);
+  });
 
   const bookedByStudent = useMemo(() => {
     const normalizedStudentId = regularForm.studentId.trim().toLowerCase();
@@ -108,6 +131,11 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
       return;
     }
 
+    if (isSlotBooked(regularForm.facultyId, regularForm.slot)) {
+      setRegularError('This slot is already booked by another student. Please select a different slot.');
+      return;
+    }
+
     const faculty = facultyList.find((item) => item.id === regularForm.facultyId);
     const newAppointment = {
       id: `a-${Date.now()}`,
@@ -150,6 +178,11 @@ function StudentPage({ facultyList, appointments, loggedInStudentName, loggedInS
     const selectedSlotTime = new Date(emergencyForm.slot).getTime();
     if (selectedSlotTime >= bookingThresholdTime) {
       setEmergencyError('Emergency booking is only for slots within the next 48 hours.');
+      return;
+    }
+
+    if (isSlotBooked(emergencyForm.facultyId, emergencyForm.slot)) {
+      setEmergencyError('This slot is already booked by another student. Please select a different slot.');
       return;
     }
 
